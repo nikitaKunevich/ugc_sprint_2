@@ -1,0 +1,6 @@
+.idea/
+.vscode/
+storage-research/
+/.env
+.py[co]
+__pycache__/
