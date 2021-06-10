@@ -1,0 +1,26 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+confluent-kafka = "*"
+fastapi = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+clickhouse-driver = "*"
+sqlalchemy = "*"
+pyjwt = {extras = ["crypto"], version = "*"}
+psycopg2-binary = "*"
+python-multipart = "*"
+backoff = "*"
+httpx = "*"
+pytest = "*"
+
+[dev-packages]
+black = "==18.4a4"
+isort = "*"
+pylint = "*"
+flake8 = "*"
+
+[requires]
+python_version = "3.9"
