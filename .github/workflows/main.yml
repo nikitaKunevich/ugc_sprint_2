@@ -36,8 +36,8 @@ jobs:
           pip install  wemake-python-styleguide flake8-html mypy lxml
       - name: Lint with wemake-python-styleguide
         run: |
-          flake8 api/ --exit-zero --format=html --htmldir=reports/api/wemake-python-styleguide/
-          flake8 etl/ --exit-zero --format=html --htmldir=reports/etl/wemake-python-styleguide/
+          flake8 api/src --exit-zero --format=html --htmldir=reports/api/wemake-python-styleguide/
+          flake8 etl/src --exit-zero --format=html --htmldir=reports/etl/wemake-python-styleguide/
       - name: Lint with mypy
         run: |
           mypy --html-report reports/api/mypy/ api/src/* || true
