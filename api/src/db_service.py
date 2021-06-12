@@ -12,6 +12,7 @@ def service_with_session(session: Session):
 
 
 class DbService:
+
     def __init__(self, session: Session) -> None:
         self._session = session
 
@@ -20,9 +21,9 @@ class DbService:
 
     def toggle_movie_like(self, user_id, movie_id, toggle):
         like = (
-            self._session.query(models.Like)
-            .filter_by(user_id=user_id, movie_id=movie_id)
-            .one_or_none()
+            self._session.query(models.Like).filter_by(
+                user_id=user_id, movie_id=movie_id
+            ).one_or_none()
         )
         if toggle:
             if not like:
@@ -36,9 +37,9 @@ class DbService:
 
     def toggle_movie_favourite(self, user_id, movie_id, toggle):
         favourite = (
-            self._session.query(models.Favourite)
-            .filter_by(user_id=user_id, movie_id=movie_id)
-            .one_or_none()
+            self._session.query(models.Favourite).filter_by(
+                user_id=user_id, movie_id=movie_id
+            ).one_or_none()
         )
         if toggle:
             if not favourite:

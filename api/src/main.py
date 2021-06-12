@@ -1,10 +1,6 @@
 import logging
 from typing import Optional
 
-from logstash_async.handler import AsynchronousLogstashHandler
-from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
-from starlette.middleware.authentication import AuthenticationMiddleware
-
 import movie_service
 from config import settings
 from confluent_kafka.cimpl import KafkaException
@@ -13,20 +9,17 @@ from db_service import DbService, service_with_session
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.params import Body
 from kafka import AIOProducer, create_topics
+from logstash_async.handler import AsynchronousLogstashHandler
 from middlewares import JWTAuthBackend
 from schemas import Event
+from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
+from starlette.middleware.authentication import AuthenticationMiddleware
 from starlette.requests import Request
-
-import sentry
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=settings.log_level)
 
-app = FastAPI(
-    title="UGC API",
-    docs_url="/swagger",
-    openapi_url="/swagger.json",
-)
+app = FastAPI(title="UGC API", docs_url="/swagger", openapi_url="/swagger.json")
 app.add_middleware(AuthenticationMiddleware, backend=JWTAuthBackend())
 app.add_middleware(SentryAsgiMiddleware)
 
@@ -41,8 +34,12 @@ def startup_event():
     create_topics()
 
     uvicorn_logger = logging.getLogger()
-    handler = AsynchronousLogstashHandler(settings.logstash_host, settings.logstash_port, transport='logstash_async.transport.UdpTransport',
-                                          database_path='logstash.db')
+    handler = AsynchronousLogstashHandler(
+        settings.logstash_host,
+        settings.logstash_port,
+        transport="logstash_async.transport.UdpTransport",
+        database_path="logstash.db",
+    )
     uvicorn_logger.addHandler(handler)
 
     init_db()
@@ -68,7 +65,7 @@ async def get_movie_service(request: Request) -> movie_service.MovieService:
 @app.post("/collect", description="Сохраняет аналитические запросы", status_code=204)
 async def create_item(request: Request, event: Event):
     try:
-        await producer.produce("events", event.dict())
+        await producer.produce("events", event.dict())  # type: ignore[union-attr]
     except KafkaException as exc:
         logger.exception(exc)
     return {}

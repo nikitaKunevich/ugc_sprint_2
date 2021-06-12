@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from typing import Optional
 
 import backoff
 from config import settings
@@ -13,6 +14,7 @@ async def get_service(authorization):
 
 
 class MovieService:
+
     def __init__(self, authorization):
         self._client = AsyncClient(
             base_url=settings.movie_api_url,
@@ -20,7 +22,7 @@ class MovieService:
         )
 
     @backoff.on_exception(backoff.expo, HTTPError, max_time=60, max_value=10)
-    async def get_movie(self, movie_id) -> dict:
+    async def get_movie(self, movie_id) -> Optional[dict]:
         resp = await self._client.get(f"/v1/film/{movie_id}")
         if resp.status_code == 404:
             return None

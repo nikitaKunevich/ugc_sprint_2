@@ -1,7 +1,6 @@
 import asyncio
 import json
 import logging
-from asyncio import Future
 from threading import Thread
 
 from config import settings
@@ -30,7 +29,7 @@ class AIOProducer:
         self._cancelled = True
         self._poll_thread.join()
 
-    def produce(self, topic: str, message: dict) -> "Future[Message]":
+    def produce(self, topic: str, message: dict) -> "asyncio.Future[Message]":
         """Создает сообщение для Kafka и возвращает Future объект."""
         result = self._loop.create_future()
 
@@ -42,8 +41,7 @@ class AIOProducer:
             else:
                 self._loop.call_soon_threadsafe(result.set_result, msg)
 
-        message = json.dumps(message).encode()
-        self._producer.produce(topic, message, on_delivery=ack)
+        self._producer.produce(topic, json.dumps(message).encode(), on_delivery=ack)
         return result
 
 

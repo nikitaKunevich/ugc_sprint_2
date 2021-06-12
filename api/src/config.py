@@ -1,9 +1,11 @@
+from typing import List
+
 from pydantic import BaseSettings
 
 
 class Settings(BaseSettings):
-    kafka_topics: list[str] = []
-    kafka_hosts: list[str] = []
+    kafka_topics: List[str] = []
+    kafka_hosts: List[str] = []
     database_url: str
     movie_api_url: str
     log_level: str = "INFO"
@@ -11,7 +13,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "RS256"
 
     sentry_dsn: str
-    environment: str = 'local'
+    environment: str = "local"
 
     logstash_host: str
     logstash_port: int
