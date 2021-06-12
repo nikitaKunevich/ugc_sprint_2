@@ -1,0 +1,29 @@
+version: '3.5'
+services:
+  analytic_api:
+    container_name: analytic_api
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    env_file:
+      - api/.env
+    networks:
+      - ugc
+      - logging
+
+  analytic_worker:
+    container_name: analytic_worker
+    build:
+      context: .
+      dockerfile: etl/Dockerfile
+    env_file:
+      - etl/.env
+    networks:
+      - ugc
+      - logging
+
+networks:
+  ugc:
+    external: True
+  logging:
+    external: true
