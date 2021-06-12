@@ -19,7 +19,7 @@ class MovieService:
             headers={"Authorization": f"{authorization}"},
         )
 
-    @backoff.on_exception(backoff.expo, HTTPError, max_value=10)
+    @backoff.on_exception(backoff.expo, HTTPError, max_time=60, max_value=10)
     async def get_movie(self, movie_id) -> dict:
         resp = await self._client.get(f"/v1/film/{movie_id}")
         if resp.status_code == 404:

@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     jwt_public_key: str
     jwt_algorithm: str = "RS256"
 
+    sentry_dsn: str
+    environment: str = 'local'
+
+    logstash_host: str
+    logstash_port: int
+
     @property
     def kafka_hosts_as_string(self):
         return ",".join(self.kafka_hosts)
