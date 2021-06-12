@@ -5,30 +5,22 @@ build:
 	docker-compose build
 
 run:
-	docker-compose build
+	docker-compose -f docker-compose.apps.yml build
 	docker-compose down
-	docker-compose up -d --scale etl=0
-	bash -c "sleep 60 && make run_etl" &
-	docker-compose logs -f analytic_api movie_api analytic_worker
+	docker-compose -f docker-compose.apps.yml -f docker-compose.services.yml up -d
+	docker-compose logs analytic_api
+	docker-compose logs analytic_worker
+
+down:
+	docker-compose -f docker-compose.services.yml -f docker-compose.apps.yml down
 
 sweep:
 	isort api/src/ etl/src
 	black api/src etl/src
 	flake8 api/src etl/src
 
-run_etl:
-	bash -c "curl -XPUT http://localhost:9200/movies -H 'Content-Type: application/json' -d @movie_api/schemas/es.movies.schema.json; \
-  	curl -XPUT http://localhost:9200/persons -H 'Content-Type: application/json' -d @movie_api/schemas/es.persons.schema.json; \
-    curl -XPUT http://localhost:9200/genres -H 'Content-Type: application/json' -d @movie_api/schemas/es.genres.schema.json"
-
-	docker-compose up -d etl
-	docker-compose logs -f etl
-
 clean:
 	docker-compose down -v --remove-orphans
 
-# rebuild:
-# 	docker-compose build movie_api auth_api
-
 help:
-	@echo "available commands: help, dev, setup_demo, sweep, run, clean"
+	@echo "available commands: help, build, down, sweep, run, clean"
