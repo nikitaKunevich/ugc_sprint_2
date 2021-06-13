@@ -1,34 +1,31 @@
 version: '3.5'
 services:
+  nginx:
+    container_name: cinema_ugc_nginx
+    image: nginx:latest
+    ports:
+      - 8000:80
+    networks:
+      - ugc
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - /tmp/logs/nginx/:/var/log/nginx/
+    logging:
+      driver: gelf
+      options:
+        gelf-address: 'udp://localhost:5044'
+        tag: nginx
+
   postgres:
-    image: postgres:13
+    image: postgres:latest
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
       POSTGRES_DB: practikum
       POSTGRES_PASSWORD: practikum
-    # networks:
-    #   - ugc
-
-  analytic_api:
-    build:
-      context: .
-      dockerfile: api/Dockerfile
-    env_file:
-      - api/.env
-    ports:
-      - 8000:8000
-    # networks:
-    #   - ugc
-
-  analytic_worker:
-    build:
-      context: .
-      dockerfile: etl/Dockerfile
-    env_file:
-      - etl/.env
-    # networks:
-    #   - ugc
+    networks:
+      - ugc
 
   # Kafka
   zookeeper-1:
@@ -47,8 +44,8 @@ services:
       - 22181:2181
       - 22888:2888
       - 23888:3888
-    # networks:
-    #   - ugc
+    networks:
+      - ugc
 
   zookeeper-2:
     image: confluentinc/cp-zookeeper:latest
@@ -66,8 +63,8 @@ services:
       - 32181:2181
       - 32888:2888
       - 33888:3888
-    # networks:
-    #   - ugc
+    networks:
+      - ugc
 
   zookeeper-3:
     image: confluentinc/cp-zookeeper:latest
@@ -85,8 +82,8 @@ services:
       - 42181:2181
       - 42888:2888
       - 43888:3888
-    # networks:
-    #   - ugc
+    networks:
+      - ugc
 
   kafka-1:
     container_name: kafka-1
@@ -104,8 +101,8 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    # networks:
-    #   - ugc
+    networks:
+      - ugc
 
   kafka-2:
     container_name: kafka-2
@@ -114,7 +111,6 @@ services:
       - zookeeper-1
       - zookeeper-2
       - zookeeper-3
-
     ports:
       - 39092:9092
     environment:
@@ -124,16 +120,16 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    # networks:
-    #   - ugc
+    networks:
+      - ugc
 
   # Clickhouse
   cl-zookeeper:
     image: zookeeper:3.5
     container_name: cl-zookeeper
     hostname: cl-zookeeper
-    # networks:
-    #   - ugc
+    networks:
+      - ugc
 
   clickhouse-node1:
     image: yandex/clickhouse-server:20.4
@@ -146,8 +142,8 @@ services:
       - ./etl/docker/clickhouse/data/node1:/etc/clickhouse-server
     depends_on:
       - cl-zookeeper
-    # networks:
-    #   - ugc
+    networks:
+      - ugc
 
   clickhouse-node2:
     image: yandex/clickhouse-server:20.4
@@ -157,8 +153,8 @@ services:
       - ./etl/docker/clickhouse/data/node2:/etc/clickhouse-server
     depends_on:
       - cl-zookeeper
-    # networks:
-    #   - ugc
+    networks:
+      - ugc
 
   clickhouse-node3:
     image: yandex/clickhouse-server:20.4
@@ -168,8 +164,8 @@ services:
       - ./etl/docker/clickhouse/data/node3:/etc/clickhouse-server
     depends_on:
       - cl-zookeeper
-    # networks:
-    #   - ugc
+    networks:
+      - ugc
 
   clickhouse-node4:
     image: yandex/clickhouse-server:20.4
@@ -179,46 +175,57 @@ services:
       - ./etl/docker/clickhouse/data/node4:/etc/clickhouse-server
     depends_on:
       - cl-zookeeper
-    # networks:
-    #   - ugc
+    networks:
+      - ugc
 
-  movie_api:
-    image: nikitak/praktikum_movie_api:latest
-    env_file:
-      - movie_api/.env
-    ports:
-      - 5000:5000
+  logstash:
+    container_name: cinema_logstash_logging
+    hostname: cinema.logstash.logging
+    image: docker.elastic.co/logstash/logstash:7.9.2
     depends_on:
-      - elasticsearch
-      - redis
+      - elasticsearch_logging
+      - nginx
+    env_file:
+      - ./docker/logstash/.env
+    ports:
+      - "5044:5044/udp"
+    volumes:
+      - ./docker/logstash/logstash.conf:/config/logstash.conf:ro
+      - /tmp/logs/nginx/:/var/log/nginx/:ro
+    command: logstash -f /config/logstash.conf
+    networks:
+      - logging
 
-  elasticsearch:
-    image: elasticsearch:7.10.1
+  elasticsearch_logging:
+    container_name: cinema_elasticsearch_logging
+    hostname: cinema.elasticsearch.logging
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.9.2
     environment:
-      discovery.type: "single-node"
+      - discovery.type=single-node
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
     ports:
       - 9200:9200
-    # volumes:
-    #   - elasticdb:/usr/share/elasticsearch/data
-    restart: always
+    volumes:
+      - /tmp/esdata:/tmp/elasticsearch/data
+    networks:
+      - logging
 
-  redis:
-    image: redis:6-alpine
-    restart: always
+  kibana:
+    container_name: cinema_kibana_logging
+    image: docker.elastic.co/kibana/kibana:7.9.2
     ports:
-      - 6379:6379
-      
-  etl:
-    image: nikitak/praktikum-etl-sprint-2.5:latest
-    environment:
-      PG_USER: "postgres"
-      PG_PASS: "practikum"
-      PG_HOST: "postgres"
-      PG_DB: "practikum"
-      # POSTGRES_URI: "postgresql://postgres:practikum@postgres:5432/practikum"
-      ES_URL: "http://elasticsearch:9200"
-      REDIS_HOST: redis
+      - 5601:5601
+    env_file:
+      - ./docker/kibana/.env
     depends_on:
-      - elasticsearch
-      - redis
-    restart: always
+      - elasticsearch_logging
+    networks:
+      - logging
+
+
+networks:
+  ugc:
+    external: True
+  logging:
+    external: true

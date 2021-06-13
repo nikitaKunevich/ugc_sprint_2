@@ -12,6 +12,7 @@ from starlette.authentication import (
 
 
 class User(BaseUser):
+
     def __init__(self, user_id: str) -> None:
         self.user_id = user_id
 
@@ -25,6 +26,7 @@ class User(BaseUser):
 
 
 class JWTAuthBackend(AuthenticationBackend):
+
     async def authenticate(self, request):
         # Get JWT token from user's cookies
 
