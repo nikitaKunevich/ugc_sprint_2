@@ -1,3 +1,4 @@
+"""Основной скрипт для запуска ETL сервиса."""
 import gc
 import json
 import sys
@@ -21,6 +22,7 @@ SLEEP_TIME = 5
 
 
 def consume_loop(consumer, topics):
+    """Цикл, который потребляет сообщения из Kafka."""
     try:
         consumer.subscribe(topics)
 
@@ -36,7 +38,7 @@ def consume_loop(consumer, topics):
                         # End of partition event
                         sys.stderr.write(
                             "%% %s [%d] reached end at offset %d\n"
-                            % (message.topic(), message.partition(), message.offset())
+                            % (message.topic(), message.partition(), message.offset()),
                         )
                     elif message.error():
                         raise KafkaException(message.error())
@@ -55,6 +57,7 @@ def consume_loop(consumer, topics):
 
 
 def shutdown():
+    """Завершение работы ETL."""
     global running
     running = False
 

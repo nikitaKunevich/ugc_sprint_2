@@ -1,3 +1,4 @@
+"""Модуль для работы с Kafka."""
 import asyncio
 import json
 import logging
@@ -12,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class AIOProducer:
+    """В отдельном потоке отправляет сообщение в Kafka."""
+
     def __init__(self):
         self._loop = asyncio.get_event_loop()
         self._producer = Producer({"bootstrap.servers": settings.kafka_hosts_as_string})
@@ -19,6 +22,7 @@ class AIOProducer:
         self._poll_thread = Thread(target=self._poll_loop)
 
     def start(self) -> None:
+        """Запускает поток."""
         self._poll_thread.start()
 
     def _poll_loop(self) -> None:
@@ -26,6 +30,7 @@ class AIOProducer:
             self._producer.poll(0.1)
 
     def close(self) -> None:
+        """Завершает работу производителя."""
         self._cancelled = True
         self._poll_thread.join()
 
@@ -36,7 +41,8 @@ class AIOProducer:
         def ack(err, msg):
             if err:
                 self._loop.call_soon_threadsafe(
-                    result.set_exception, KafkaException(err)
+                    result.set_exception,
+                    KafkaException(err),
                 )
             else:
                 self._loop.call_soon_threadsafe(result.set_result, msg)
