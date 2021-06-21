@@ -1,3 +1,4 @@
+"""Модуль для работы с Clickhouse."""
 from typing import List
 
 from clickhouse_driver import Client
@@ -12,8 +13,9 @@ clickhouse_client = Client(
 
 
 def init_clickhouse_database():
+    """Создает базы данных в ClickHouse."""
     clickhouse_client.execute(
-        "CREATE DATABASE IF NOT EXISTS analytics ON CLUSTER company_cluster"
+        "CREATE DATABASE IF NOT EXISTS analytics ON CLUSTER company_cluster",
     )
     clickhouse_client.execute(
         """
@@ -30,11 +32,12 @@ def init_clickhouse_database():
             )
             Engine=MergeTree()
         ORDER BY movie_timestamp
-        """
+        """,
     )
 
 
 def save_to_clickhouse(events: List[Event]):
+    """Сохраняет событие в CLickHouse."""
     clickhouse_client.execute(
         """
         INSERT INTO analytics.regular_table

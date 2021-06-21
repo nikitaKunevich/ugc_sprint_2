@@ -1,3 +1,4 @@
+"""Модуль содержит вспомогательный функции для работы с базой данных."""
 import logging
 
 import backoff
@@ -14,6 +15,7 @@ Base = declarative_base()
 
 
 def init_db():
+    """Инициализация базы данных."""
     logger.debug("creating tables")
 
     @backoff.on_exception(backoff.constant, Exception, interval=5)

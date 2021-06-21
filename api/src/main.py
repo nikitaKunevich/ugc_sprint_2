@@ -1,3 +1,4 @@
+"""Основной модуль UGC сервиса."""
 import logging
 from typing import Optional
 
@@ -28,6 +29,7 @@ producer: Optional[AIOProducer] = None
 
 @app.on_event("startup")
 def startup_event():
+    """Функционал, выполянемый перед стартом приложения."""
     global producer
     producer = AIOProducer()
     producer.start()
@@ -47,23 +49,27 @@ def startup_event():
 
 @app.on_event("shutdown")
 async def shutdown_event():
+    """Функционал, выполянемый перед прекращением работы приложения."""
     producer.close()
 
 
 def get_db() -> DbService:
+    """Возвращает подготовленный DbService."""
     with service_with_session(SessionLocal()) as service:
         yield service
 
 
 async def get_movie_service(request: Request) -> movie_service.MovieService:
+    """Возвращает MovieService."""
     async with movie_service.get_service(
-        request.headers.get("Authorization")
+        request.headers.get("Authorization"),
     ) as service:
         yield service
 
 
 @app.post("/collect", description="Сохраняет аналитические запросы", status_code=204)
 async def create_item(request: Request, event: Event):
+    """Сохраняет аналитические события в Kafka."""
     try:
         await producer.produce("events", event.dict())  # type: ignore[union-attr]
     except KafkaException as exc:
@@ -72,7 +78,9 @@ async def create_item(request: Request, event: Event):
 
 
 @app.post(
-    "/movie/{movie_id}/likes", description="Лайкнуть/дизлайкнуть фильм", status_code=204
+    "/movie/{movie_id}/likes",
+    description="Лайкнуть/дизлайкнуть фильм",
+    status_code=204,
 )
 async def like_movie(
     request: Request,
@@ -81,6 +89,7 @@ async def like_movie(
     db: DbService = Depends(get_db),
     movie_api=Depends(get_movie_service),
 ):
+    """Лайкнуть/дизлайкнуть фильм."""
     if not request.user:
         raise HTTPException(status_code=401, detail="Only for authorized users")
 
@@ -91,7 +100,9 @@ async def like_movie(
 
 
 @app.post(
-    "/movie/{movie_id}/comments", description="Откомментировать фильм", status_code=204
+    "/movie/{movie_id}/comments",
+    description="Откомментировать фильм",
+    status_code=204,
 )
 async def comment(
     request: Request,
@@ -100,6 +111,7 @@ async def comment(
     db: DbService = Depends(get_db),
     movie_api=Depends(get_movie_service),
 ):
+    """Создает комментарий к фильму."""
     if not request.user:
         raise HTTPException(status_code=401, detail="Only for authorized users")
     if not await movie_api.get_movie(movie_id):
@@ -120,6 +132,7 @@ async def favourite_movie(
     db: DbService = Depends(get_db),
     movie_api=Depends(get_movie_service),
 ):
+    """Отмечает фильм как избранный."""
     if not request.user:
         raise HTTPException(status_code=401, detail="Only for authorized users")
 

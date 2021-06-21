@@ -19,9 +19,8 @@ sentry-sdk = "*"
 python-logstash-async = "*"
 
 [dev-packages]
-black = "==18.4a4"
+black = "==21.6b0"
 isort = "*"
-pylint = "*"
 flake8 = "*"
 
 [requires]
